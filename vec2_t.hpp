@@ -7,7 +7,7 @@ struct vec2_t
     float y;
 
     vec2_t(float _x = 0, float _y = 0) : x(_x) , y(_y) {}
-    vec2_t(int _x, int _y) : x((_x)) , y((_y)) {}
+    // vec2_t(int _x, int _y) : x((_x)) , y((_y)) {}
     
 
     // --- Operators ---

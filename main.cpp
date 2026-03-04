@@ -351,19 +351,19 @@ void render() {
     uint32_t t1_Green[3] = {GREEN};
     uint32_t t2_col[3] = {0xFF0390FC};
     if(vertState == AllV){
-    triangleFill(v0,v1,v2,t1_Green);
-    triangleFill(v3,v2,v1,t1_col);
-    triangleFill(v4,v1,v0,t2_col);
+    triangleFill(v0,v1,v2,colors);
+    triangleFill(v3,v2,v1,colors);
+    triangleFill(v4,v1,v0,colors);
    }
    else if(vertState == V1) {
-    triangleFill(v3,v2,v1,t1_col);
-    triangleFill(v4,v1,v0,t2_col);
+    triangleFill(v3,v2,v1,colors);
+    triangleFill(v4,v1,v0,colors);
    }else if(vertState == V2) {
-    triangleFill(v0,v1,v2,t1_Green);
-    triangleFill(v4,v1,v0,t2_col);
+    triangleFill(v0,v1,v2,colors);
+    triangleFill(v4,v1,v0,colors);
    }else if(vertState == V3) {
-    triangleFill(v0,v1,v2,t1_Green);
-    triangleFill(v3,v2,v1,t1_col);
+    triangleFill(v0,v1,v2,colors);
+    triangleFill(v3,v2,v1,colors);
    }
 
     renderFrameBuffer();
@@ -390,29 +390,6 @@ void renderStressTest()
 //Random Triangulate - test the traingle function:
 
 
-void triangleParallel(vec2_t points[3], uint32_t color)
-{
-    int bbMinx = MIN(MIN(points[0].x,points[1].x),points[2].x);
-    int bbMiny = MIN(MIN(points[0].y,points[1].y),points[2].y);
-    int bbMaxx = MAX(MAX(points[0].x,points[1].x),points[2].x);
-    int bbMaxy = MAX(MAX(points[0].y,points[1].y),points[2].y);
-    #pragma omp parallel for
-    for ( int x=bbMinx; x<=bbMaxx;x++)
-    {
-        for(int y=bbMiny;y<=bbMaxy;y++){
-            vec2_t pixel(x,y);
-            int vectr_to_pixel_prod_1 = edgeCrossProd_2D(points[0],points[1],pixel);
-            int vectr_to_pixel_prod_2 = edgeCrossProd_2D(points[1],points[2],pixel);
-            int vectr_to_pixel_prod_3 = edgeCrossProd_2D(points[2],points[0],pixel);
-            if(vectr_to_pixel_prod_1>=0
-                &&vectr_to_pixel_prod_2>=0&&
-                vectr_to_pixel_prod_3>=0)
-                drawPixel(x,y,color);
-            }
-        }
-        
-    }
-    
 void triangleRender()
 {
     clearFrameBuffer(BLACK);
@@ -425,23 +402,7 @@ void triangleRender()
         vec2_t triangle[3] = {  vec2_t(rand()%width,rand()%height),
                                 vec2_t(rand()%width,rand()%height),
                                 vec2_t(rand()%width,rand()%height)};
-        triangleParallel(triangle,getRandomColor());
-    }
-
-    renderFrameBuffer();
-}
-void triangleRender2() {
-    clearFrameBuffer(BLACK);
-
-    constexpr int width = SCREEN_WIDTH;
-    constexpr int height = SCREEN_HEIGHT;
-    //Draw three triangles on the screen per frame...
-    for(int times = 0; times < 3; times++)
-    {   
-        vec2_t triangle[3] = {  vec2_t(rand()%width,rand()%height),
-                                vec2_t(rand()%width,rand()%height),
-                                vec2_t(rand()%width,rand()%height)};
-        triangleParallel(triangle,getRandomColor());
+        triangleFill(triangle[0],triangle[1],triangle[2],colors);
     }
 
     renderFrameBuffer();
@@ -495,12 +456,10 @@ void renderManager(const char* method = "standard", Model *model = nullptr)
         return renderStressTest();
     else if(!strcmp(method,"t1"))
         return triangleRender();
-    else if(!strcmp(method,"t2"))
-        return triangleRender2();
     else
     {
         if(model != nullptr)
-        return drawModel(model);
+            return drawModel(model);
     }
 }
 
@@ -518,14 +477,12 @@ int main(int argc, char* argv[]) {
             renderMethod = argv[1];// strcpy(renderMethod,argv[1]);
         else if(!strcmp(argv[1],"t1"))
             renderMethod = argv[1];// strcpy(renderMethod,argv[1]);
-        else if(!strcmp(argv[1],"t2"))
-            renderMethod = argv[1];// strcpy(renderMethod,argv[1]);
         else {
             std::cout<<"Unknown usage. known usages: "<<std::endl;
             std::cout<<"\tstandard - standard input, with input keys ([1],[2],[3],[a])"<<std::endl;
             std::cout<<"\tstress - stress test lines randomly on screen."<<std::endl;
             std::cout<<"\tt1 - triangle rasterizing, simplified attempt."<<std::endl;
-            std::cout<<"\tt2 - triangle rasterizing, thorough attempt."<<std::endl;
+            
             std::cout<<"\t'M' \"filename\" - rasterize .obj file."<<std::endl;
             return 0;
         }
