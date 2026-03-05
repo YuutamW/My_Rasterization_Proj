@@ -158,21 +158,34 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, color_t color[3])
     int xMax = MAX(MAX(v0.x,v1.x),v2.x);
     int yMax = MAX(MAX(v0.y,v1.y),v2.y);
     
+    //compute the const deltas that will be used for the hor' and ver' steps
+    int delta_W0_Col = (v1.y - v2.y);
+    int delta_W1_Col = (v2.y - v0.y);
+    int delta_W2_Col = (v0.y - v1.y);
+    
+    int delta_W0_Row = (v2.x - v1.x); 
+    int delta_W1_Row = (v0.x - v2.x);
+    int delta_W2_Row = (v1.x - v0.x);
+
     float area = edgeCrossProd_2D(v0,v1,v2);// find the area of the entire triangle/parallelogram
     if(area < 1) return;// backface culling + discarding triangles too samll
     int bias0 = isTopLeft(v1,v2) ? 0 : -1;
     int bias1 = isTopLeft(v2,v0) ? 0 : -1;
     int bias2 = isTopLeft(v0,v1) ? 0 : -1;
 
+    vec2_t p0(xMin,yMin); //top left most pixel of the bounding box
+    int w0_row = edgeCrossProd_2D(v1,v2,p0) + bias0;
+    int w1_row = edgeCrossProd_2D(v2,v0,p0) + bias1;
+    int w2_row = edgeCrossProd_2D(v0,v1,p0) + bias2;
     //Loop All candidate pixels inside the boundong box:
     #pragma omp parallel for
-    for(int y = yMin; y <= yMax; y++)
+    for(int y = yMin; y <= yMax; y++) {
+        float W0 = w0_row;
+        float W1 = w1_row;
+        float W2 = w2_row;
         for(int x = xMin; x <= xMax; x++)
         {
-            vec2_t p(x,y);
-            int W0 = edgeCrossProd_2D(v1,v2,p) + bias0;
-            int W1 = edgeCrossProd_2D(v2,v0,p) + bias1;
-            int W2 = edgeCrossProd_2D(v0,v1,p) + bias2;
+           
             bool pIsInside = W0 >=0 && W1 >=0 && W2 >=0;
             if(pIsInside)
             {
@@ -189,7 +202,14 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, color_t color[3])
 
                 drawPixel(x,y,interpolatedColor);
             }
+            W0 += delta_W0_Col;
+            W1 += delta_W1_Col;
+            W2 += delta_W2_Col;
         }
+        w0_row += delta_W0_Row;
+        w1_row += delta_W1_Row;
+        w2_row += delta_W2_Row;
+    }
     
 }
 
@@ -200,21 +220,34 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, uint32_t color)
     int xMax = MAX(MAX(v0.x,v1.x),v2.x);
     int yMax = MAX(MAX(v0.y,v1.y),v2.y);
     
+    //compute the const deltas that will be used for the hor' and ver' steps
+    int delta_W0_Col = (v1.y - v2.y);
+    int delta_W1_Col = (v2.y - v0.y);
+    int delta_W2_Col = (v0.y - v1.y);
+    
+    int delta_W0_Row = (v2.x - v1.x); 
+    int delta_W1_Row = (v0.x - v2.x);
+    int delta_W2_Row = (v1.x - v0.x);
+
     float area = edgeCrossProd_2D(v0,v1,v2);// find the area of the entire triangle/parallelogram
     if(area < 1) return;// backface culling + discarding triangles too samll
     int bias0 = isTopLeft(v1,v2) ? 0 : -1;
     int bias1 = isTopLeft(v2,v0) ? 0 : -1;
     int bias2 = isTopLeft(v0,v1) ? 0 : -1;
 
+    vec2_t p0(xMin,yMin); //top left most pixel of the bounding box
+    int w0_row = edgeCrossProd_2D(v1,v2,p0) + bias0;
+    int w1_row = edgeCrossProd_2D(v2,v0,p0) + bias1;
+    int w2_row = edgeCrossProd_2D(v0,v1,p0) + bias2;
     //Loop All candidate pixels inside the boundong box:
     #pragma omp parallel for
-    for(int y = yMin; y <= yMax; y++)
+    for(int y = yMin; y <= yMax; y++) {
+        float W0 = w0_row;
+        float W1 = w1_row;
+        float W2 = w2_row;
         for(int x = xMin; x <= xMax; x++)
         {
-            vec2_t p(x,y);
-            int W0 = edgeCrossProd_2D(v1,v2,p) + bias0;
-            int W1 = edgeCrossProd_2D(v2,v0,p) + bias1;
-            int W2 = edgeCrossProd_2D(v0,v1,p) + bias2;
+            
             bool pIsInside = W0 >=0 && W1 >=0 && W2 >=0;
             if(pIsInside)
             {
@@ -231,7 +264,14 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, uint32_t color)
                  
                 drawPixel(x,y,interpolatedColor);
             }
+            W0 += delta_W0_Col;
+            W1 += delta_W1_Col;
+            W2 += delta_W2_Col;
         }
+        w0_row += delta_W0_Row;
+        w1_row += delta_W1_Row;
+        w2_row += delta_W2_Row;
+    }
 }
 
 
@@ -357,8 +397,10 @@ void triangleRender()
 #define SCALE_FACTOR 400
 std::tuple<int,int> project(vec3 v) {
     const double scale = 1.0;
-    return { (int)((v.x * scale + 1.)    *  SCREEN_WIDTH / 2.0), 
-             (int)((1.0 - (v.y * scale)) *  SCREEN_HEIGHT / 2.0)};
+    const double scale_F = 2.0;
+    const double pos_offset = 1.0;
+    return { (int)((v.x * scale + pos_offset)    *  SCREEN_WIDTH / scale_F), 
+             (int)((pos_offset - (v.y * scale)) *  SCREEN_HEIGHT /scale_F)};
 }
 
 void drawModel(Model *obj) {

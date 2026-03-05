@@ -50,7 +50,7 @@ private:
             if (type == "v") {
                 vec3 v;
                 iss >> v.x >> v.y >> v.z;
-                verts.push_back(v);
+                verts.push_back(v); // pushing to the verts array all v[x,y,z]
             }else if (type == "f") {
                 std::vector<int> f;
                 int idx;
