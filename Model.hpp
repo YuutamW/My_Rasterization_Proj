@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-
+#include <algorithm>
 template<int n> struct vec {
     double data[n] = {0};
     double& operator[](const int i)       { assert(i>=0 && i<n); return data[i]; }
@@ -78,6 +78,21 @@ private:
             }
         }
         std::cerr << "# v# " << nverts() << " f# "  << nfaces()/3 << std::endl;
+        std::vector<int> idx(nfaces());
+        for(int i = 0; i < nfaces();i++) idx[i] = i;
+
+        std::sort(idx.begin(),idx.end(), 
+            [&](const int& a, const int& b) { //given two traingles compare their min z coord
+                float aminz = std::min(vert(a,0).z,std::min(vert(a,1).z,vert(a,2).z));
+                float bminz = std::min(vert(b,0).z,std::min(vert(b,1).z,vert(b,2).z));
+                return aminz < bminz;    
+            });
+        std::vector<int> facet_vrt2(nfaces()*3);//allocate arr to store permutated facets
+        for(int i = 0; i < nfaces(); i++) //for each new facet
+            for(int j = 0; j < 3; j++)  // copy its three vertices ftom the old array
+                facet_vrt2[i*3+j] = facet_vrt[idx[i]*3+j];
+        
+                facet_vrt = facet_vrt2; //store the sorted triangles
     }
 
 public:

@@ -34,11 +34,11 @@ vec2_t vertices[3] = {
 };
 
 vec2_t UnionVerts[5] = {
-    vec2_t(40,40)*2,
-    vec2_t(80,40)*2,
-    vec2_t(40,80)*2,
-    vec2_t(90,90)*2,
-    vec2_t(75,20)*2
+    vec2_t(40,40)*10,
+    vec2_t(80,40)*10,
+    vec2_t(40,80)*10,
+    vec2_t(90,90)*10,
+    vec2_t(75,20)*10
 };
 
 struct color_t {
@@ -53,11 +53,6 @@ color_t colors[3] = {
     {.r = 0x00 , .g =0x00, .b = 0xFF}
 };
 
-uint32_t Colors[3] = {
-    {0xFFFF0000},
-    {0xFF00FF00},
-    {0xFF0000FF}
-};
 // Function to handle input (Keyboard/Mouse)
 void processInput() {
     SDL_Event event;
@@ -136,7 +131,7 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, uint32_t color[3])
             int W0 = edgeCrossProd_2D(v1,v2,p) + bias0;
             int W1 = edgeCrossProd_2D(v2,v0,p) + bias1;
             int W2 = edgeCrossProd_2D(v0,v1,p) + bias2;
-            bool pIsInside = W0 >=0 && W1 >=0 && W2 >=0;
+            bool pIsInside = W0 >=0 && W1 >=0 && W2 >=0; 
             if(pIsInside)
             {
                 //compute barycentric coord, alpha,beta,gama :
@@ -149,7 +144,7 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, uint32_t color[3])
                 int g = (alpha)*(color[0] | 0XFF00FF00) + (beta)*(color[1] | 0XFF00FF00) + (gamma)*(color[2] | 0XFF00FF00);
                 int b = (alpha)*(color[0] | 0xFF0000FF) + (beta)*(color[1] | 0xFF0000FF) + (gamma)*(color[2] | 0xFF0000FF);
                 uint32_t interpolatedColor = 0x00000000 | (a<<32) | (r << 16) | (g << 8) | b;
-                 
+        
                 drawPixel(x,y,interpolatedColor);
             }
         }
@@ -271,48 +266,6 @@ void drawLine(vec2_t VA, vec2_t VB, uint32_t col)
         }
     }
 }
-//the first test, just to see the vertices we created.
-void drawVertices(vec2_t verts[3], uint32_t v0Col = BLUE, uint32_t v1Col =GREEN , uint32_t v2Col = RED)
-{
-    drawPixel(verts[0].x,verts[0].y,v0Col);
-    drawPixel(verts[1].x,verts[1].y,v1Col);
-    drawPixel(verts[2].x,verts[2].y,v2Col);
-}
-
-void scanLineApproach(vec2_t Va, vec2_t Vb, vec2_t Vc, uint32_t color = WHITE)
-{   //sort the vertices: a,b,c in ascending y order
-    if(Va.y>Vb.y) { std::swap(Va.y,Vb.y); std::swap(Va.x,Vb.x);}
-    if(Va.y>Vc.y) { std::swap(Va.y,Vc.y); std::swap(Va.x,Vc.x);}
-    if(Vb.y>Vc.y) { std::swap(Vb.y,Vc.y); std::swap(Vb.x,Vc.x);}
-    /* Now we have two Boundaries: A is between Va&Vc, 
-    B is between Va&Vb. BUT, B is made of 2 parts,
-    so we draw the bottom half of the triangle by cutting it
-    horizontaly.
-    */
-    int totalHeight = static_cast<int>(Vc.y-Va.y);
-
-    if(Va.y != Vb.y) {  //if the bottom half is not degenerate
-        int segmentHeight = Vb.y-Va.y;
-        for(int y = Va.y; y <= Vb.y; y++ ){ // sweep the horizontal line from ay to by
-            int x1 = Va.x + ((Vc.x-Va.x)*(y-Va.y))/totalHeight;
-            int x2 = Va.x + ((Vb.x-Va.x)*(y-Va.y))/segmentHeight;
-            for(int x = std::min(x1,x2); x < std::max(x1,x2); x++)
-                drawPixel(x,y,color);
-        }
-
-    }
-    if(Vb.y != Vc.y)
-    {
-        int segmentHeight = Vc.y - Vb.y;
-        for(int y = Vb.y; y<=Vc.y;y++) {
-            int x1 = Va.x + ((Vc.x-Va.x)*(y-Va.y))/totalHeight;
-            int x2 = Vb.x + ((Vc.x-Vb.x)*(y-Vb.y))/segmentHeight;
-            for(int x = std::min(x1,x2); x < std::max(x1,x2); x++)
-                drawPixel(x,y,color);
-        }
-    }
-    
-}
 
 uint32_t getRandomColor() {
     uint8_t r = std::rand() % 256; // Random Red (0-255)
@@ -327,14 +280,6 @@ uint32_t getRandomColor() {
     return 0xFF000000 | (r << 16) | (g << 8) | b;
 }
 
-uint32_t *rand_col3() {
-    uint32_t randCol[3] = {
-        {getRandomColor()},
-        {getRandomColor()},
-        {getRandomColor()}
-    };
-    return randCol;
-}
 
 
 
