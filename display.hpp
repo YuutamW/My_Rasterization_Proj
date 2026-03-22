@@ -3,10 +3,10 @@
 #include <vector>
 
 // Definitions
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080 // Classic "Doom" resolution
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 800 // Classic "Doom" resolution
 
-static unsigned long FPS =  10;
+static unsigned long FPS =  30;
 #define FRAME_TARGET_TIME (1000 / FPS)
 
 // Declarations

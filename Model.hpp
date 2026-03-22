@@ -92,7 +92,7 @@ private:
             for(int j = 0; j < 3; j++)  // copy its three vertices ftom the old array
                 facet_vrt2[i*3+j] = facet_vrt[idx[i]*3+j];
         
-                facet_vrt = facet_vrt2; //store the sorted triangles
+        facet_vrt = facet_vrt2; //store the sorted triangles
     }
 
 public:

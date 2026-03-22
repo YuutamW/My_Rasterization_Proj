@@ -109,48 +109,6 @@ bool isTopLeft(vec2_t& start, vec2_t& end) {
 
 /*Triangle Fill overloading functions for different case usages , primarily while testing different algotrithms and phases throught the project... */
 
-void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, uint32_t color[3])
-{
-    int xMin = MIN(MIN(v0.x,v1.x),v2.x); 
-    int yMin = MIN(MIN(v0.y,v1.y),v2.y);
-    int xMax = MAX(MAX(v0.x,v1.x),v2.x);
-    int yMax = MAX(MAX(v0.y,v1.y),v2.y);
-    
-    float area = edgeCrossProd_2D(v0,v1,v2);// find the area of the entire triangle/parallelogram
-    if(area < 1) return;// backface culling + discarding triangles too samll
-    int bias0 = isTopLeft(v1,v2) ? 0 : -1;
-    int bias1 = isTopLeft(v2,v0) ? 0 : -1;
-    int bias2 = isTopLeft(v0,v1) ? 0 : -1;
-
-    //Loop All candidate pixels inside the boundong box:
-    #pragma omp parallel for
-    for(int y = yMin; y <= yMax; y++)
-        for(int x = xMin; x <= xMax; x++)
-        {
-            vec2_t p(x,y);
-            int W0 = edgeCrossProd_2D(v1,v2,p) + bias0;
-            int W1 = edgeCrossProd_2D(v2,v0,p) + bias1;
-            int W2 = edgeCrossProd_2D(v0,v1,p) + bias2;
-            bool pIsInside = W0 >=0 && W1 >=0 && W2 >=0; 
-            if(pIsInside)
-            {
-                //compute barycentric coord, alpha,beta,gama :
-                float alpha = W0/area;
-                float beta = W1/area;
-                float gamma = W2/area;
-                // if(alpha * beta * gamma < 0) continue; // negative barycentric coord->pixel outisede the triangel                
-                int a = 0xFF;
-                int r = (alpha)*(color[0] | 0XFFFF0000) + (beta)*(color[1] | 0XFFFF0000) + (gamma)*(color[2] | 0XFFFF0000);
-                int g = (alpha)*(color[0] | 0XFF00FF00) + (beta)*(color[1] | 0XFF00FF00) + (gamma)*(color[2] | 0XFF00FF00);
-                int b = (alpha)*(color[0] | 0xFF0000FF) + (beta)*(color[1] | 0xFF0000FF) + (gamma)*(color[2] | 0xFF0000FF);
-                uint32_t interpolatedColor = 0x00000000 | (a<<32) | (r << 16) | (g << 8) | b;
-        
-                drawPixel(x,y,interpolatedColor);
-            }
-        }
-    
-}
-
 void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, color_t color[3])
 {
     int xMin = MIN(MIN(v0.x,v1.x),v2.x); 
@@ -163,9 +121,9 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, color_t color[3])
     int delta_W1_Col = (v2.y - v0.y);
     int delta_W2_Col = (v0.y - v1.y);
     
-    int delta_W0_Row = (v2.x - v1.x); 
-    int delta_W1_Row = (v0.x - v2.x);
-    int delta_W2_Row = (v1.x - v0.x);
+    // int delta_W0_Row = (v2.x - v1.x); 
+    // int delta_W1_Row = (v0.x - v2.x);
+    // int delta_W2_Row = (v1.x - v0.x);
 
     float area = edgeCrossProd_2D(v0,v1,v2);// find the area of the entire triangle/parallelogram
     if(area < 1) return;// backface culling + discarding triangles too samll
@@ -173,16 +131,17 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, color_t color[3])
     int bias1 = isTopLeft(v2,v0) ? 0 : -1;
     int bias2 = isTopLeft(v0,v1) ? 0 : -1;
 
-    vec2_t p0(xMin,yMin); //top left most pixel of the bounding box
-    int w0_row = edgeCrossProd_2D(v1,v2,p0) + bias0;
-    int w1_row = edgeCrossProd_2D(v2,v0,p0) + bias1;
-    int w2_row = edgeCrossProd_2D(v0,v1,p0) + bias2;
+    // vec2_t p0(xMin,yMin); //top left most pixel of the bounding box
+    // int w0_row = edgeCrossProd_2D(v1,v2,p0) + bias0;
+    // int w1_row = edgeCrossProd_2D(v2,v0,p0) + bias1;
+    // int w2_row = edgeCrossProd_2D(v0,v1,p0) + bias2;
     //Loop All candidate pixels inside the boundong box:
     #pragma omp parallel for
     for(int y = yMin; y <= yMax; y++) {
-        float W0 = w0_row;
-        float W1 = w1_row;
-        float W2 = w2_row;
+        vec2_t p_row(xMin,y);
+        float W0 = edgeCrossProd_2D(v1,v2,p_row) + bias0;
+        float W1 = edgeCrossProd_2D(v2,v0,p_row) + bias1;
+        float W2 = edgeCrossProd_2D(v0,v1,p_row) + bias2;
         for(int x = xMin; x <= xMax; x++)
         {
            
@@ -194,11 +153,11 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, color_t color[3])
                 float beta = W1/area;
                 float gamma = W2/area;
                 // if(alpha * beta * gamma < 0) continue; // negative barycentric coord->pixel outisede the triangel                
-                int a = 0xFF;
+                
                 int r = (alpha)*(color[0].r) + (beta)*(color[1].r)  + (gamma)*(color[2].r);
                 int g = (alpha)*(color[0].g ) + (beta)*(color[1].g ) + (gamma)*(color[2].g );
                 int b = (alpha)*(color[0].b ) + (beta)*(color[1].b ) + (gamma)*(color[2].b );
-                uint32_t interpolatedColor = 0xFF000000 | (a<<32) | (r << 16) | (g << 8) | b;
+                uint32_t interpolatedColor = 0xFF000000 | (r << 16) | (g << 8) | b;
 
                 drawPixel(x,y,interpolatedColor);
             }
@@ -206,9 +165,9 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, color_t color[3])
             W1 += delta_W1_Col;
             W2 += delta_W2_Col;
         }
-        w0_row += delta_W0_Row;
-        w1_row += delta_W1_Row;
-        w2_row += delta_W2_Row;
+        // w0_row += delta_W0_Row;
+        // w1_row += delta_W1_Row;
+        // w2_row += delta_W2_Row;
     }
     
 }
@@ -225,9 +184,9 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, uint32_t color)
     int delta_W1_Col = (v2.y - v0.y);
     int delta_W2_Col = (v0.y - v1.y);
     
-    int delta_W0_Row = (v2.x - v1.x); 
-    int delta_W1_Row = (v0.x - v2.x);
-    int delta_W2_Row = (v1.x - v0.x);
+    // int delta_W0_Row = (v2.x - v1.x); 
+    // int delta_W1_Row = (v0.x - v2.x);
+    // int delta_W2_Row = (v1.x - v0.x);
 
     float area = edgeCrossProd_2D(v0,v1,v2);// find the area of the entire triangle/parallelogram
     if(area < 1) return;// backface culling + discarding triangles too samll
@@ -235,16 +194,17 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, uint32_t color)
     int bias1 = isTopLeft(v2,v0) ? 0 : -1;
     int bias2 = isTopLeft(v0,v1) ? 0 : -1;
 
-    vec2_t p0(xMin,yMin); //top left most pixel of the bounding box
-    int w0_row = edgeCrossProd_2D(v1,v2,p0) + bias0;
-    int w1_row = edgeCrossProd_2D(v2,v0,p0) + bias1;
-    int w2_row = edgeCrossProd_2D(v0,v1,p0) + bias2;
+    // vec2_t p0(xMin,yMin); //top left most pixel of the bounding box
+    // int w0_row = edgeCrossProd_2D(v1,v2,p0) + bias0;
+    // int w1_row = edgeCrossProd_2D(v2,v0,p0) + bias1;
+    // int w2_row = edgeCrossProd_2D(v0,v1,p0) + bias2;
     //Loop All candidate pixels inside the boundong box:
     #pragma omp parallel for
     for(int y = yMin; y <= yMax; y++) {
-        float W0 = w0_row;
-        float W1 = w1_row;
-        float W2 = w2_row;
+        vec2_t p_row(xMin,y);
+        float W0 = edgeCrossProd_2D(v1,v2,p_row) + bias0;
+        float W1 = edgeCrossProd_2D(v2,v0,p_row) + bias1;
+        float W2 = edgeCrossProd_2D(v0,v1,p_row) + bias2;
         for(int x = xMin; x <= xMax; x++)
         {
             
@@ -255,12 +215,12 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, uint32_t color)
                 float alpha = W0/area;
                 float beta = W1/area;
                 float gamma = W2/area;
-                // if(alpha * beta * gamma < 0) continue; // negative barycentric coord->pixel outisede the triangel                
-                int a = 0xFF;
+                 if(alpha * beta * gamma < 0) continue; // negative barycentric coord->pixel outisede the triangel                
+                
                 int r = (alpha)*(color | 0XFFFF0000) + (beta)*(color | 0XFFFF0000) + (gamma)*(color | 0XFFFF0000);
                 int g = (alpha)*(color | 0XFF00FF00) + (beta)*(color | 0XFF00FF00) + (gamma)*(color | 0XFF00FF00);
                 int b = (alpha)*(color | 0xFF0000FF) + (beta)*(color | 0xFF0000FF) + (gamma)*(color | 0xFF0000FF);
-                uint32_t interpolatedColor = 0xFF000000 | (a<<32) | (r << 16) | (g << 8) | b;
+                uint32_t interpolatedColor = 0xFF000000 | (r << 16) | (g << 8) | b;
                  
                 drawPixel(x,y,interpolatedColor);
             }
@@ -268,9 +228,9 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, uint32_t color)
             W1 += delta_W1_Col;
             W2 += delta_W2_Col;
         }
-        w0_row += delta_W0_Row;
-        w1_row += delta_W1_Row;
-        w2_row += delta_W2_Row;
+        // w0_row += delta_W0_Row;
+        // w1_row += delta_W1_Row;
+        // w2_row += delta_W2_Row;
     }
 }
 
@@ -326,15 +286,15 @@ uint32_t getRandomColor() {
 // Function to render graphics
 void render() {
     clearFrameBuffer(BLACK);
+    float rotationSpeed = 0.1;
+    float angle = SDL_GetTicks() / 1000.0f * rotationSpeed;
+    vec2_t center(SCREEN_WIDTH/2.0f,SCREEN_HEIGHT/2.0f);
+    vec2_t v0 = v0.vec2_rotate(UnionVerts[0],center,angle);
+    vec2_t v1 = v1.vec2_rotate(UnionVerts[1],center,angle);
+    vec2_t v2 = v2.vec2_rotate(UnionVerts[2],center,angle);
+    vec2_t v3 = v3.vec2_rotate(UnionVerts[3],center,angle);
+    vec2_t v4 = v4.vec2_rotate(UnionVerts[4],center,angle);
     
-    vec2_t v0 = UnionVerts[0];
-    vec2_t v1 = UnionVerts[1];
-    vec2_t v2 = UnionVerts[2];
-    vec2_t v3 = UnionVerts[3];
-    vec2_t v4 = UnionVerts[4];
-    uint32_t t1_col[3] = {0xFFA74DE3};
-    uint32_t t1_Green[3] = {GREEN};
-    uint32_t t2_col[3] = {0xFF0390FC};
     if(vertState == AllV){
     triangleFill(v0,v1,v2,colors);
     triangleFill(v3,v2,v1,colors);
@@ -403,36 +363,34 @@ std::tuple<int,int> project(vec3 v) {
              (int)((pos_offset - (v.y * scale)) *  SCREEN_HEIGHT /scale_F)};
 }
 
-void drawModel(Model *obj) {
+void triangleRotate(vec2_t& Va, vec2_t& Vb, vec2_t& Vc ,float rotSpeed= 0.1f ,vec2_t center = vec2_t(SCREEN_WIDTH/2.0f,SCREEN_HEIGHT/2.0f) ) {
+    float angle = SDL_GetTicks() / 1000.0f * rotSpeed;
+    Va = Va.vec2_rotate(Va,center,angle);
+    Vb = Vb.vec2_rotate(Vb,center,angle);
+    Vc = Vc.vec2_rotate(Vc,center,angle);
+}
+
+void drawModel(Model *obj, bool rotate = false) {
     clearFrameBuffer(BLACK);
     if(!obj) return;
     for(int i = 0; i < obj->nfaces(); i++) {
        auto [ax,ay] = project(obj->vert(i,0));
         auto [bx, by] = project(obj->vert(i, 1));
         auto [cx, cy] = project(obj->vert(i, 2));
-        triangleFill(vec2_t(ax,ay),vec2_t(cx,cy),vec2_t(bx,by),colors);
+        vec2_t a = vec2_t(ax,ay);
+        vec2_t b = vec2_t(bx,by);
+        vec2_t c = vec2_t(cx,cy);
+        if(rotate)
+        triangleRotate(a,b,c);
+        triangleFill(a,c,b,colors);
     }
         
-    
-    // for(int i = 0; i <obj->nfaces(); i++) {//iterating throgh the triangels
 
-    //     auto [ax,ay] = project(obj->vert(i,0));
-    //     auto [bx, by] = project(obj->vert(i, 1));
-    //     auto [cx, cy] = project(obj->vert(i, 2));
-    //     uint32_t randCol[3] = {getRandomColor(),getRandomColor(),getRandomColor()};
-    //     triangleFill(vec2_t(ax,ay),vec2_t(cx,cy),vec2_t(bx,by),randCol);
-        
-    // }
-    // for(int i = 0; i < obj->nverts(); ++i) { //iterating through vertices
-    //     vec3 v = obj->vert(i);               // get i-th vert
-    //     auto [ix,iy] = project(v);
-    //     // drawPixel(ix,iy,getRandomColor());
-    // }
     renderFrameBuffer();
     // std::cout<<"Number of faces loaded: "<<obj->nfaces()<<" Number of vertices loaded: "<<obj->nverts()<<std::endl;
 }
 
-
+bool RotateObj = false;
 void renderManager(const char* method = "standard", Model *model = nullptr)
 {
     if(!method) exit(1);
@@ -446,15 +404,18 @@ void renderManager(const char* method = "standard", Model *model = nullptr)
     else
     {
         if(model != nullptr)
-            return drawModel(model);
+            return drawModel(model,RotateObj);
     }
 }
 
 
+
 int main(int argc, char* argv[]) {
     const char* renderMethod = "";
-    if(argc == 3 && strcmp(argv[1],"M") == 0)
+    if(argc == 3 && (!strcmp(argv[1],"M") || !strcmp(argv[1],"MR"))) {
         renderMethod = argv[2];
+        RotateObj = !strcmp(argv[1],"MR");
+    }
     //    strcpy(renderMethod,argv[2]);
 
     else if(argc == 1)
@@ -471,6 +432,7 @@ int main(int argc, char* argv[]) {
             std::cout<<"\tt1 - triangle rasterizing, simplified attempt."<<std::endl;
             
             std::cout<<"\t'M' \"filename\" - rasterize .obj file."<<std::endl;
+            std::cout<<"\t'MR' \"filename\" - rasterize .obj file. & Rotate "<<std::endl;
             return 0;
         }
     }
