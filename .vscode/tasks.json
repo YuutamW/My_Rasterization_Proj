@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "Build SDL3 Project",
+            "command": "g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${fileDirname}\\*.cpp", 
+                "-o",
+                "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "-I",
+                "C:\\Users\\yotam\\OneDrive\\Studies\\CPP-OOP\\Rasterizer Project\\SDL3-3.2.28\\include",
+                "-L",
+                "C:\\Users\\yotam\\OneDrive\\Studies\\CPP-OOP\\Rasterizer Project\\SDL3-3.2.28\\lib\\x64",
+                "-lSDL3"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Builds all .cpp files in the folder using g++ and SDL3"
+        }
+    ]
+}
