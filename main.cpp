@@ -136,7 +136,7 @@ void triangleFill(vec2_t v0, vec2_t v1, vec2_t v2, color_t color[3])
     // int w1_row = edgeCrossProd_2D(v2,v0,p0) + bias1;
     // int w2_row = edgeCrossProd_2D(v0,v1,p0) + bias2;
     //Loop All candidate pixels inside the boundong box:
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for(int y = yMin; y <= yMax; y++) {
         vec2_t p_row(xMin,y);
         float W0 = edgeCrossProd_2D(v1,v2,p_row) + bias0;
